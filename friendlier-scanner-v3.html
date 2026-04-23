@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Friendlier Container Scanner</title>
+  <link rel="stylesheet" href="friendlier-scanner-v3.css">
+  <script src="friendleir-scanner-v3.js" defer></script>
+</head>
+<body>
+
+  <div id="loginScreen" class="login-screen">
+    <div class="login-logo-mark">📦</div>
+    <div class="login-title">Container Scanner</div>
+    <div class="login-subtitle">Friendlier Wash Station</div>
+    <div class="login-label">Enter Your Name</div>
+    <input id="operatorInput" class="login-input" placeholder="Your name..." autofocus>
+    <button id="startBtn" class="login-btn" disabled>Start Scanning →</button>
+  </div>
+
+  <div id="mainApp" class="hidden">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-mark">📦</div>
+        <div>
+          <div class="header-title">Container Scanner</div>
+          <div class="header-subtitle">Operator: <span id="headerOperator"></span></div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="total-count" id="totalCount">0</div>
+        <div class="total-pill">
+          <div class="total-dot"></div>
+          <div class="total-label">Containers Washed</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-scan">📷 Scan Containers</button>
+      <button class="tab" id="tab-lids">🔲 Add Lids</button>
+      <button class="tab" id="tab-log">📋 View Log</button>
+    </div>
+
+    <div class="content">
+      <div id="panel-scan">
+        <div class="section-label">Step 1: Select Container Type</div>
+        <div class="type-grid" id="typeGrid"></div>
+        <div class="scan-box">
+          <div class="section-label" id="scanLabel">Step 2: Scan QR Code</div>
+          <input id="scanInput" class="scan-input warn" placeholder="Select a type above, then scan...">
+          <div id="learnedInfo" class="hidden"></div>
+        </div>
+        <div class="section-label">You can also tap the +stack buttons above to add without scanning</div>
+      </div>
+
+      <div id="panel-lids" class="hidden">
+        <div class="info-box">
+          <div style="font-size: 20px;">⚠️</div>
+          <div>Lids don't have QR codes. Use the buttons below to add them manually, or tap "Auto-Match" to match lid
+            counts to base counts automatically.</div>
+        </div>
+        <div id="lidGrid"></div>
+        <button id="autoMatchBtn" class="btn-auto">🔄 AUTO-MATCH LIDS TO BASE COUNTS</button>
+      </div>
+
+      <div id="panel-log" class="hidden">
+        <div class="log-actions">
+          <button id="exportBtn" class="btn-export">📥 EXPORT CSV</button>
+          <button id="resetBtn" class="btn-reset">🗑️ RESET ALL</button>
+          <button id="switchOpBtn" class="btn-switch">👤 SWITCH OPERATOR</button>
+        </div>
+        <div id="summaryBox" class="summary-box"></div>
+        <div id="logBox" class="log-box"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Friendlier Container Scanner — Built by Ahmad</span>
+      <span id="footerLearned"></span>
+    </div>
+  </div>
+
+  <!-- Stack Picker Overlay -->
+  <div id="stackPickerOverlay" class="overlay hidden" style="align-items: flex-end; padding: 0;">
+    <div class="picker-modal">
+      <div class="picker-handle"></div>
+      <div class="picker-header">
+        <div class="picker-icon-wrap" id="pickerIconWrap">📦</div>
+        <div>
+          <div class="picker-type" id="pickerTypeName">28oz Base</div>
+          <div class="picker-stack-info" id="pickerStackInfo">1 stack = 108 containers</div>
+        </div>
+      </div>
+
+      <div class="picker-display">
+        <div class="picker-display-cell">
+          <div class="picker-num-stacks" id="pickerStackCount">0</div>
+          <div class="picker-cell-label">Stacks</div>
+        </div>
+        <div class="picker-display-cell">
+          <div class="picker-total-num" id="pickerTotalContainers">0</div>
+          <div class="picker-cell-label">Containers</div>
+        </div>
+      </div>
+
+      <div class="picker-controls">
+        <button class="picker-ctrl-btn minus" data-delta="-5">−5<div class="picker-ctrl-sublabel">stacks</div></button>
+        <button class="picker-ctrl-btn minus" data-delta="-1">−1<div class="picker-ctrl-sublabel">stack</div></button>
+        <button class="picker-ctrl-btn neutral" data-delta="0" id="pickerResetBtn">0<div class="picker-ctrl-sublabel">
+            reset</div></button>
+        <button class="picker-ctrl-btn plus" data-delta="1">+1<div class="picker-ctrl-sublabel">stack</div></button>
+        <button class="picker-ctrl-btn plus" data-delta="5">+5<div class="picker-ctrl-sublabel">stacks</div></button>
+        <button class="picker-ctrl-btn plus" data-delta="10">+10<div class="picker-ctrl-sublabel">stacks</div></button>
+      </div>
+
+      <div class="picker-action-row">
+        <button class="picker-cancel" id="pickerCancelBtn">Cancel</button>
+        <button class="picker-ok" id="pickerOkBtn" disabled>Confirm</button>
+      </div>
+      <div class="picker-direction" id="pickerDirection"></div>
+    </div>
+  </div>
+
+  <div id="pendingOverlay" class="overlay hidden">
+    <div class="modal">
+      <div style="font-size: 16px; color: #F6AD55; margin-bottom: 8px; font-weight: 700; text-align: center;">⚠️ New
+        Container Detected</div>
+      <div style="font-size: 13px; color: #7B8794; margin-bottom: 20px; text-align: center;">
+        This QR code hasn't been scanned before. What type of container is it?
+      </div>
+      <div id="pendingUrl"
+        style="font-size: 11px; color: #A5B0BC; margin-bottom: 20px; word-break: break-all; text-align: center; font-family: monospace;">
+      </div>
+      <div id="pendingBtns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;">
+      </div>
+      <button id="cancelPendingBtn"
+        style="width: 100%; padding: 12px; background: white; border: 2px solid #E5E9ED; border-radius: 10px; color: #7B8794; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">Cancel</button>
+      <div style="font-size: 10px; color: #A5B0BC; margin-top: 14px; text-align: center;">💡 Next time this container is
+        scanned, it will be auto-detected</div>
+    </div>
+  </div>
+
+  <div id="editOverlay" class="overlay hidden">
+    <div class="modal">
+      <div style="font-size: 16px; color: #4A9FD8; margin-bottom: 8px; font-weight: 700; text-align: center;">✏️ Edit
+        Entry</div>
+      <div id="editLabel"
+        style="font-size: 14px; color: #1A2332; margin-bottom: 16px; text-align: center; font-weight: 600;"></div>
+      <div style="font-size: 12px; color: #7B8794; margin-bottom: 10px; text-align: center;">Change quantity:</div>
+      <input id="editInput" type="number"
+        style="width: 100%; text-align: center; font-size: 32px; margin-bottom: 20px; padding: 16px; background: #F8FAFB; border: 2px solid #4A9FD8; border-radius: 12px; color: #1A2332; font-family: inherit; outline: none; font-weight: 700;">
+      <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+        <button id="saveEditBtn"
+          style="flex: 1; padding: 14px; background: linear-gradient(135deg, #27AE60 0%, #1E8449 100%); border: none; border-radius: 10px; color: white; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;">SAVE</button>
+        <button id="cancelEditBtn"
+          style="flex: 1; padding: 14px; background: white; border: 2px solid #E5E9ED; border-radius: 10px; color: #7B8794; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;">CANCEL</button>
+      </div>
+      <button id="deleteEntryBtn"
+        style="width: 100%; padding: 12px; background: white; border: 2px solid #F4C2C2; border-radius: 10px; color: #E74C3C; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">🗑️
+        Delete This Entry</button>
+    </div>
+  </div>
+</body>
+
+</html>
